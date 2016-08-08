@@ -233,13 +233,6 @@ class MiniBatchLoader(object):
 
 
 
-#     @staticmethod
-#     def warpAffine(img, M, ):
-
-# M[0, 0] * x + M[0, 1] * y + M[0, 2]
-# M[1, 0] * x + M[1, 1] * y + M[1, 2]
-
-
 """
 
 import os, glob
