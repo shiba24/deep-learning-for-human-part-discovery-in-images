@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Human parts network')
     parser.add_argument('--batchsize', '-b', default=100, type=int,
                         help='Batch size of training')
-    parser.add_argument('--epoch', '-e', default=30, type=int,
+    parser.add_argument('--epoch', '-e', default=100, type=int,
                         help='Number of epoch of training')
     parser.add_argument('--gpu', '-g', default=-1, type=int,
                         help='GPU ID (negative value indicates CPU)')
