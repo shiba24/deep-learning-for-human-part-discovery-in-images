@@ -41,12 +41,15 @@ python train.py --help
 
 Now in prep.
 
+## Result
+
+Now in prep.
+
 # Visualize Prediction
 
 ```
 python visualize.py -f PATH_TO_IMAGE_FILE
 ```
-
 
 
 # LICENSE

@@ -30,6 +30,8 @@ class HumanPartsNet(chainer.Chain):
     def __init__(self, VGGModel=None, n_class=4):
         if VGGModel is None:
             self.wb = load_VGGmodel()
+        else:
+            self.wb = VGGModel
         self.n_class = n_class
         # layers which is trained
         super(HumanPartsNet, self).__init__(
@@ -62,7 +64,8 @@ class HumanPartsNet(chainer.Chain):
             upconv5=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),            
         )
         self.train = True
- 
+        del self.wb
+
     @staticmethod
     def crop(inputs, outsize, offset):
         x = F.identity(inputs)
