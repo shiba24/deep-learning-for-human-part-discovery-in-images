@@ -74,7 +74,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model setteing
-    model = HumanPartsNet(n_class=24)
+    model = HumanPartsNet(n_class=25)
     if args.pretrainedmodel is not None:
         from chainer import serializers
         serializers.load_npz(args.pretrainedmodel, model)
