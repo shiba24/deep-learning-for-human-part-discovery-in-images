@@ -1,0 +1,11 @@
+.DS_STORE
+*.pkl
+*.jpg
+*.png
+*.pyc
+unneeded/*
+*.m
+data/*
+!data/.gitkeep
+result/*
+!result/.gitkeep
