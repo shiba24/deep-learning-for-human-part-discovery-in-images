@@ -92,7 +92,6 @@ class MiniBatchLoader(object):
                 minibatch_path_X = [self.train_X_file_list[ind_Xy[i]] for i in range(0, self.batchsize)]
                 minibatch_path_y = [self.train_y_file_list[ind_Xy[i]] for i in range(0, self.batchsize)]
                 minibatch_X, minibatch_y = self.load_batch(minibatch_path_X, minibatch_path_y)
-                # randomly apply augmentation process
                 minibatch_X, minibatch_y = self.process_batch(minibatch_X, minibatch_y)
 
                 self.current_index += self.batchsize
@@ -112,7 +111,6 @@ class MiniBatchLoader(object):
                 minibatch_path_X = [self.test_X_file_list[ind_Xy[i]] for i in range(0, self.batchsize)]
                 minibatch_path_y = [self.test_y_file_list[ind_Xy[i]] for i in range(0, self.batchsize)]
                 minibatch_X, minibatch_y = self.load_batch(minibatch_path_X, minibatch_path_y)
-                # randomly apply augmentation process
                 minibatch_X, minibatch_y = self.process_batch(minibatch_X, minibatch_y)
 
                 self.current_index += self.batchsize
@@ -123,13 +121,9 @@ class MiniBatchLoader(object):
 
     # apply for minibatch
     def load_batch(self, minibatch_path_X, minibatch_path_y):
-        minibatch_X = self.subtract_mean_batch(self.load_X(minibatch_path_X))
+        minibatch_X = self.load_X(minibatch_path_X)
         minibatch_y = self.load_y(minibatch_path_y)
         return minibatch_X, minibatch_y
-
-    def subtract_mean_batch(self, images, mean_image="mean.jpg"):
-        subtracted_img = images - 126
-        return subtracted_img
 
     def load_X(self, minibatch_path):
         return np.array([cv2.resize(cv2.imread(f), (self.insize, self.insize)) for f in minibatch_path])
@@ -161,8 +155,12 @@ class MiniBatchLoader(object):
         processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
                                                      change_index[i]) for i in range(len(minibatch_y))])
         reshaped_X = np.transpose(processed_X, (0, 3, 1, 2))        # n_batch, n_channel, h, w
-        reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list))]), (1, 0, 2, 3))
-        return reshaped_X / 255., reshaped_y
+        reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
+        return self.standardize(reshaped_X), reshaped_y
+
+    def standardize(self, images, mean_image="mean.jpg"):
+        subtracted_img = images - 126
+        return subtracted_img / 255.
 
     # apply for each image
     def change_hue(self, img, delta_hue):

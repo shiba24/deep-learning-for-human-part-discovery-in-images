@@ -27,14 +27,15 @@ parser.add_argument('--file', '-f', type=str,
 args = parser.parse_args()
 
 # model setteing
-model = HumanPartsNet(n_class=24)
+model = HumanPartsNet(n_class=25)
 if args.pretrainedmodel is not None:
     from chainer import serializers
     serializers.load_npz(args.pretrainedmodel, model)
 
 img = np.transpose(np.expand_dims(cv2.imread(args.file), 0), (0, 3, 1, 2)) / 255.
-x = chainer.Variable(img.astype(np.float32))
+x = chainer.Variable(img.astype(np.float32), volatile='on')
 y = model.predict(x)
-mask = np.argmax(y.data[0], axis=2)
+mask = np.argmax(y.data[0], axis=0)
+
 print mask
 
