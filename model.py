@@ -12,6 +12,7 @@ import six
 
 
 url = 'https://drive.google.com/open?id=0BxSyYt1jT6LhUlhITjdicDFyNHM'
+modelname = 'fcn-8s-pascalcontext_W_and_b.pkl'
 """
 This URL is for the pre-trained model, VGG 16 with fcn 8s pascal context.
 
@@ -132,7 +133,6 @@ class HumanPartsNet(chainer.Chain):
                       train=self.train, ratio=0.5)
         del p1
         h = F.relu(self.upconv5(h + g))
-        print h.data.shape, output_shape
         h = self.crop(h, output_shape, self.calc_offset(h.data.shape, output_shape))
         return h
 
@@ -155,13 +155,9 @@ class HumanPartsNet(chainer.Chain):
 
 
 def load_VGGmodel():
-    modelname = 'fcn-8s-pascalcontext_W_and_b.pkl'
-
     print "loading VGG model..."
     if not os.path.exists(modelname):
         download()
-        load_VGGmodel_caffe()
-
     with open(modelname, 'rb') as d_pickle:
         data = six.moves.cPickle.load(d_pickle)
     return data
@@ -173,18 +169,9 @@ def download():
     wget.download(url)
 
 
-
 '''
 
-
-def load_VGGmodel():
-    modelname = 'fcn-8s-pascalcontext_W_and_b.pkl'
-    print "loading VGG model..."
-    model = pickle.load(open(modelname, "rb"))
-    return model
-
 # caffe code
-
     n.conv5_3, n.relu5_3 = conv_relu(n.relu5_2, 512)
     n.pool5 = max_pool(n.relu5_3)
 

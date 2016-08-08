@@ -15,7 +15,7 @@ def matfilelist(directory):
     return glob.glob(directory + '*.mat')
 
 
-def makedic(matfile):
+def make_mask(matfile):
     d = sio.loadmat(matfile)
     dic = {}
     dic["filename"] = d["anno"][0, 0][0][0]
@@ -38,11 +38,11 @@ def makedic(matfile):
     return dic
 
 
-def make_mask(dic, insize=(300, 300)):
-    mask = np.zeros((len(parts_list), )+ insize)
-    n_person = len(dic["person"].keys())
-    if dic["person"]["0"]["mask"] == insize:
-        [parts_list.index(j) * d["person"]["0"][j] for i in dic["person"][j] for j in dic["person"]]
+# def make_mask(dic, insize=(300, 300)):
+#     mask = np.zeros((len(parts_list), )+ insize)
+#     n_person = len(dic["person"].keys())
+#     if dic["person"]["0"]["mask"] == insize:
+#         [parts_list.index(j) * d["person"]["0"][j] for i in dic["person"][j] for j in dic["person"]]
 
 
 def save_batch(matfilelist, batchsize):
@@ -63,28 +63,6 @@ def save_batch(matfilelist, batchsize):
     savename = savedir + dic["filename"] + ".pkl"
     with open(savename, 'wb') as output:
         six.moves.cPickle.dump(data, output, -1)
-
-
-
-class Preprocessor(object):
-    """docstring for Preprocessor"""
-    def __init__(self, arg):
-        super(Preprocessor, self).__init__()
-        self.arg = arg
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
