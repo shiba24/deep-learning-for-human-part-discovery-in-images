@@ -94,11 +94,11 @@ class HumanPartsNet(chainer.Chain):
         output_shape = (x.data.shape[0], self.n_class, x.data.shape[2], x.data.shape[3])
         h = F.relu(self.conv1_1(x))
         h = F.relu(self.conv1_2(h))
-        p1 = F.max_pooling_2d(h, 2, stride=2)
-        h = F.relu(self.conv2_1(p1))
+        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.relu(self.conv2_1(h))
         h = F.relu(self.conv2_2(h))
-        p2 = F.max_pooling_2d(h, 2, stride=2)
-        h = F.relu(self.conv3_1(p2))
+        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.relu(self.conv3_1(h))
         h = F.relu(self.conv3_2(h))
         h = F.relu(self.conv3_3(h))
         p3 = F.max_pooling_2d(h, 2, stride=2)
@@ -124,11 +124,21 @@ class HumanPartsNet(chainer.Chain):
                       train=self.train, ratio=0.5)
         del p3
         h = F.relu(self.upconv3(h + g))
+        h = F.relu(self.conv1_1(x))
+        h = F.relu(self.conv1_2(h))
+        h = F.max_pooling_2d(h, 2, stride=2)
+        h = F.relu(self.conv2_1(h))
+        h = F.relu(self.conv2_2(h))
+        p2 = F.max_pooling_2d(h, 2, stride=2)
         p2 = self.upsample_pool2(p2)
         g = F.dropout(self.crop(p2, h.data.shape, self.calc_offset(p2.data.shape, h.data.shape)),
                       train=self.train, ratio=0.5)
         del p2
         h = F.relu(self.upconv4(h + g)) 
+
+        h = F.relu(self.conv1_1(x))
+        h = F.relu(self.conv1_2(h))
+        p1 = F.max_pooling_2d(h, 2, stride=2)
         p1 = self.upsample_pool1(p1)
         g = F.dropout(self.crop(p1, h.data.shape, self.calc_offset(p1.data.shape, h.data.shape)),
                       train=self.train, ratio=0.5)

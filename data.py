@@ -151,8 +151,9 @@ class MiniBatchLoader(object):
         processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
                                                      change_index[i]) for i in range(len(minibatch_y))])
         reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w
-        reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
-        return reshaped_X, reshaped_y
+        # reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
+        # reshaped_y = np.transpose(processed_y, (1, 0, 2, 3))
+        return reshaped_X, processed_y
 
     def standardize(self, images, mean_image="mean.jpg"):
         if not os.path.exists(mean_image):
