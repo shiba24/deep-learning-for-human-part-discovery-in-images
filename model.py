@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import chainer
 import chainer.links as L
 import chainer.functions as F

@@ -1,6 +1,3 @@
-#!/usr/bin/env python2.7
-# coding:utf-8
-
 import os, glob
 import numpy as np
 import cv2
@@ -154,13 +151,19 @@ class MiniBatchLoader(object):
                                                      change_index[i]) for i in range(len(minibatch_X))])
         processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
                                                      change_index[i]) for i in range(len(minibatch_y))])
-        reshaped_X = np.transpose(processed_X, (0, 3, 1, 2))        # n_batch, n_channel, h, w
+        reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w
         reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
-        return self.standardize(reshaped_X), reshaped_y
+        return reshaped_X, reshaped_y
 
     def standardize(self, images, mean_image="mean.jpg"):
+        if not os.path.exists(mean_img):
+            self.calc_mean()
+        mean = cv2.imread(mean_img)
         subtracted_img = images - 126
         return subtracted_img / 255.
+
+    def calc_mean(self):
+        pass
 
     # apply for each image
     def change_hue(self, img, delta_hue):
@@ -256,6 +259,9 @@ minibatch_path_y = [m.train_y_file_list[ind_Xy[i]] for i in range(0, 10)]
 minibatch_X, minibatch_y = m.load_batch(minibatch_path_X, minibatch_path_y)
 processed_X, processed_y = m.process_batch(minibatch_X, minibatch_y)
 
+
+mkdir -p /home/ec2-user/.local/lib/python2.7/site-packages
+echo 'import site; site.addsitedir("/home/ec2-user/.linuxbrew/lib/python2.7/site-packages")' >> /home/ec2-user/.local/lib/python2.7/site-packages/homebrew.pth
 """
 
 
