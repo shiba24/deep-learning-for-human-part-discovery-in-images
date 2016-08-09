@@ -1,7 +1,6 @@
 import os, glob
 import numpy as np
 import cv2
-from scipy.ndimage import zoom
 import scipy.io as sio
 
 
@@ -156,13 +155,13 @@ class MiniBatchLoader(object):
         return reshaped_X, reshaped_y
 
     def standardize(self, images, mean_image="mean.jpg"):
-        if not os.path.exists(mean_img):
+        if not os.path.exists(mean_image):
             self.calc_mean()
-        mean = cv2.imread(mean_img)
+        # mean = cv2.imread(mean_image)
         subtracted_img = images - 126
         return subtracted_img / 255.
 
-    def calc_mean(self):
+    def calc_mean(self):        
         pass
 
     # apply for each image
