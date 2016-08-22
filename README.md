@@ -27,7 +27,7 @@ This script downloads VOC 2010 dataset (<http://host.robots.ox.ac.uk/pascal/VOC/
 # Start training
 
 ```
-python train.py -g 0 -b 100 -e 3000 -l on -s on
+python train.py -g 0 -b 5 -e 3000 -l on -s on
 ```
 
 ## Possible options
