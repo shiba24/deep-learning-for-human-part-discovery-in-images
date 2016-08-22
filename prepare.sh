@@ -19,6 +19,9 @@ mv Annotations_Part/* data/mask/
 mv VOCdevkit/ data
 
 rm *.m
+rm Sitting.tar.gz
+rm trainval.tar.gz
+rm VOCtrainval_03-May-2010.tar
 rmdir Annotations_Part
 rmdir img
 rmdir masks

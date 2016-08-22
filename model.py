@@ -9,8 +9,9 @@ import os
 import six
 
 
-url = 'https://drive.google.com/open?id=0BxSyYt1jT6LhUlhITjdicDFyNHM'
+url = 'https://googledrive.com/host/0BxSyYt1jT6LhUlhITjdicDFyNHM'
 modelname = 'fcn-8s-pascalcontext_W_and_b.pkl'
+
 """
 This URL is for the pre-trained model, VGG 16 with fcn 8s pascal context.
 
@@ -123,7 +124,8 @@ class HumanPartsNet(chainer.Chain):
         g = F.dropout(self.crop(p3, h.data.shape, self.calc_offset(p3.data.shape, h.data.shape)),
                       train=self.train, ratio=0.5)
         del p3
-        h = F.relu(self.upconv3(h + g))
+        j = F.relu(self.upconv3(h + g))
+
         h = F.relu(self.conv1_1(x))
         h = F.relu(self.conv1_2(h))
         h = F.max_pooling_2d(h, 2, stride=2)
@@ -131,19 +133,19 @@ class HumanPartsNet(chainer.Chain):
         h = F.relu(self.conv2_2(h))
         p2 = F.max_pooling_2d(h, 2, stride=2)
         p2 = self.upsample_pool2(p2)
-        g = F.dropout(self.crop(p2, h.data.shape, self.calc_offset(p2.data.shape, h.data.shape)),
+        g = F.dropout(self.crop(p2, j.data.shape, self.calc_offset(p2.data.shape, j.data.shape)),
                       train=self.train, ratio=0.5)
         del p2
-        h = F.relu(self.upconv4(h + g)) 
+        j = F.relu(self.upconv4(j + g)) 
 
         h = F.relu(self.conv1_1(x))
         h = F.relu(self.conv1_2(h))
         p1 = F.max_pooling_2d(h, 2, stride=2)
         p1 = self.upsample_pool1(p1)
-        g = F.dropout(self.crop(p1, h.data.shape, self.calc_offset(p1.data.shape, h.data.shape)),
+        g = F.dropout(self.crop(p1, j.data.shape, self.calc_offset(p1.data.shape, j.data.shape)),
                       train=self.train, ratio=0.5)
         del p1
-        h = F.relu(self.upconv5(h + g))
+        h = F.relu(self.upconv5(j + g))
         h = self.crop(h, output_shape, self.calc_offset(h.data.shape, output_shape))
         return h
 

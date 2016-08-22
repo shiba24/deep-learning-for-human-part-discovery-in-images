@@ -37,4 +37,7 @@ y = model.predict(x)
 mask = np.argmax(y.data[0], axis=0)
 
 print mask
+"""
+now writing next...
+"""
 

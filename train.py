@@ -30,7 +30,7 @@ def train(model, optimizer, MiniBatchLoader, mean_loss, ac):
         # optimizer.weight_decay(0.0001)
         optimizer.update(model, x, t)
         sum_loss += float(model.loss.data) * len(t.data)
-        sum_accuracy += float(model.accuracy.data) * len(t.data)
+        sum_accuracy += float(model.accuracy) * len(t.data)
     print('train mean loss={}, accuracy={}'.format(sum_loss / MiniBatchLoader.datasize_train, sum_accuracy / MiniBatchLoader.datasize_train))
     mean_loss.append(sum_loss / MiniBatchLoader.datasize_train)
     ac.append(sum_accuracy / MiniBatchLoader.datasize_train)
@@ -46,7 +46,7 @@ def test(model, MiniBatchLoader, mean_loss, ac):
         t = chainer.Variable(xp.asarray(y, dtype=xp.int32), volatile='on')
         loss = model(x, t)
         sum_loss += float(loss.data) * len(t.data)
-        sum_accuracy += float(model.accuracy.data) * len(t.data)
+        sum_accuracy += float(model.accuracy) * len(t.data)
     print('test  mean loss={}, accuracy={}'.format(
         sum_loss / MiniBatchLoader.datasize_test, sum_accuracy / MiniBatchLoader.datasize_test))
     mean_loss.append(sum_loss / MiniBatchLoader.datasize_test)

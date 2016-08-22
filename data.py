@@ -16,14 +16,6 @@ parts_list = ['head', 'leye', 'reye', 'lear', 'rear',
               'lfoot', 'rlleg', 'ruleg', 'rfoot']
 
 
-class TwoRandomIterator(object):
-    def __iter__(self):   # iterator setting
-        return self
-
-    def next(self):       # for each loop
-        return np.random.random(), np.random.random()
-
-
 class MiniBatchLoader(object):
     def __init__(self, X_dir, y_dir, batchsize, insize=300, train=True):
         self.X_dir = X_dir
@@ -259,9 +251,5 @@ minibatch_path_y = [m.train_y_file_list[ind_Xy[i]] for i in range(0, 10)]
 minibatch_X, minibatch_y = m.load_batch(minibatch_path_X, minibatch_path_y)
 processed_X, processed_y = m.process_batch(minibatch_X, minibatch_y)
 
-
-mkdir -p /home/ec2-user/.local/lib/python2.7/site-packages
-echo 'import site; site.addsitedir("/home/ec2-user/.linuxbrew/lib/python2.7/site-packages")' >> /home/ec2-user/.local/lib/python2.7/site-packages/homebrew.pth
 """
-
 
