@@ -154,10 +154,12 @@ class HumanPartsNet(chainer.Chain):
         if cuda.get_array_module(predictions.data) == cuda.cupy:
             predictions = cuda.to_cpu(predictions.data)
             truths = cuda.to_cpu(truths.data)
- 
+        else:
+            predictions = predictions.data
+            truths = truths.data
+
         # we want to exclude labels with -1
         mask = truths != -1
- 
         # reduce values along classe axis
         reduced_preditions = np.argmax(predictions, axis=1) 
         # mask
