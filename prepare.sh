@@ -5,7 +5,7 @@ mkdir data/mask
 wget http://www2.informatik.uni-freiburg.de/~oliveira/datasets/Sitting.tar.gz
 wget http://www.stat.ucla.edu/~xianjie.chen/pascal_part_dataset/trainval.tar.gz
 wget http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar
-wget https://googledrive.com/host/0BxSyYt1jT6LhUlhITjdicDFyNHM -O fcn-8s-pascalcontext_W_and_b.pkl
+wget https://drive.google.com/open?id=0BxSyYt1jT6LhUlhITjdicDFyNHM -O fcn-8s-pascalcontext_W_and_b.pkl
 
 # untar
 tar zxvf Sitting.tar.gz
