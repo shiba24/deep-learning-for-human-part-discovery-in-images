@@ -187,37 +187,44 @@ class MiniBatchLoader(object):
         return rotated_img
 
     def crop_3d(self, img, rand_value1, rand_value2):
-        x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
-        y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-        if x_start < 0 or y_start < 0:
-            return self.pad_3d(img, rand_value1, rand_value2)
-        else:
-            cropped_img = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
-            return cropped_img
+        cropped_img = np.zeros((self.insize, self.insize, img.shape[2])).astype(np.uint8)
+        if img.shape[0] < self.insize or img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1], :] = img.copy()
+        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[:, y_start:y_start + img.shape[1], :] = img[x_start:x_start + self.insize, :, :]
+        elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[x_start:x_start + img.shape[0], :, :] = img[:, y_start:y_start+self.insize, :]
+        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[:,:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
+        return cropped_img
 
     def crop_2d(self, img, rand_value1, rand_value2):
-        x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
-        y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-        if x_start < 0 or y_start < 0:
-            return self.pad_2d(img, rand_value1, rand_value2)
-        else:
-            cropped_img = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
-            return cropped_img
-
-    def pad_3d(self, img, rand_value1, rand_value2):
-        padded_img = np.zeros((self.insize, self.insize, img.shape[2])).astype(np.uint8)
-        x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
-        y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-        padded_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1], :] = img.copy()
-        return padded_img
-
-    def pad_2d(self, img, rand_value1, rand_value2):
-        padded_img = np.zeros((self.insize, self.insize)).astype(np.uint8)
-        x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
-        y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-        padded_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1]] = img.copy()
-        return padded_img
-
+        cropped_img = np.zeros((self.insize, self.insize)).astype(np.uint8)
+        if img.shape[0] < self.insize or img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1]] = img.copy()
+        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[:, y_start:y_start + img.shape[1]] = img[x_start:x_start + self.insize, :]
+        elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[x_start:x_start + img.shape[0], :] = img[:, y_start:y_start+self.insize]
+        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
+        return cropped_img
 
     def subtract_mean_one(self, img, mean_image="mean.jpg"):
         mean_img = cv2.imread(mean_image)
