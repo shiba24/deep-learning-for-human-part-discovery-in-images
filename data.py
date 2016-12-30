@@ -124,14 +124,15 @@ class MiniBatchLoader(object):
         if "image" in matfile:
             parts_mask = np.transpose(np.expand_dims(d["M"], 0), (1, 2, 0))
         else:
-            object_name = [d["anno"][0, 0][1][0, i][0][0] for i in range(d["anno"][0, 0][1].shape[1])]
-            img_shape = d["anno"][0, 0][1][0, 0][2].shape
+            objects = d["anno"][0,0][1]
+            object_name = [objects[0, i][0][0] for i in range(objects.shape[1])]
+            img_shape = objects[0, 0][2].shape
             parts_mask = np.zeros(img_shape + (1, ))
             for index, obj in enumerate(object_name):
                 if obj == "person":
-                    if not d["anno"][0, 0][1][0, index][3].shape == (0, 0):
-                        for j in range(d["anno"][0, 0][1][0, index][3].shape[1]):
-                            parts_mask[:, :, 0] = (parts_list.index(d["anno"][0, 0][1][0, index][3][0, j][0][0]) + 1) * np.array(d["anno"][0, 0][1][0, index][3][0, j][1])
+                    if not objects[0, index][3].shape == (0, 0):
+                        for j in range(objects[0, index][3].shape[1]):
+                            parts_mask[:, :, 0] = parts_mask[:, :, 0] + (parts_list.index(objects[0, index][3][0, j][0][0]) + 1) * np.array(objects[0, index][3][0, j][1])
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize))
         return parts_mask
 
