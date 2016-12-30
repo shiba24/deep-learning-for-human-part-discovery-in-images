@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     # prepare data feeder
     MiniBatchLoader = MiniBatchLoader(X_dir, y_dir, batchsize=args.batchsize, insize=model.insize, train=True)
+    MiniBatchLoader.scan_for_human()
     debugger = Debugger()
 
     # Learning loop
