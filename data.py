@@ -2,6 +2,7 @@ import os, glob
 import numpy as np
 import cv2
 import scipy.io as sio
+from tqdm import tqdm
 
 
 SEED = 16
@@ -14,7 +15,7 @@ parts_list = ['head', 'leye', 'reye', 'lear', 'rear',
               'torso', 'neck', 'llarm', 'luarm', 'lhand',
               'rlarm', 'ruarm', 'rhand', 'llleg', 'luleg',
               'lfoot', 'rlleg', 'ruleg', 'rfoot']
-
+merged_parts_list = {'head':1, 'leye':1, 'reye':1, 'lear':1, 'rear':1, 'lebrow':1, 'rebrow':1, 'nose':1, 'mouth': 1, 'hair': 1, 'torso': 2, 'neck': 2, 'llarm': 3, 'luarm': 4, 'lhand':5, 'rlarm': 6, 'ruarm': 7, 'rhand': 8, 'llleg': 9, 'luleg': 10, 'lfoot':11, 'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
 
 class MiniBatchLoader(object):
     def __init__(self, X_dir, y_dir, batchsize, insize=300, train=True):
@@ -24,6 +25,7 @@ class MiniBatchLoader(object):
         self.insize = insize
         self.train = train
         self.train_X_file_list, self.train_y_file_list, self.test_X_file_list, self.test_y_file_list = self.split_train_test(X_dir, y_dir)
+        self.human_y_list = []
 
     def get_file_list(self, directory, file_extension):
         if isinstance(directory, str):
@@ -35,10 +37,14 @@ class MiniBatchLoader(object):
             file_list += glob.glob(d + "*" + file_extension)
         return file_list
 
-    def split_train_test(self, X_dir, y_dir, split_ratio=0.95):
+    def split_train_test(self, X_dir, y_dir, split_ratio=.9, y_list = None):
         all_X_list = self.get_file_list(X_dir, X_file_extension)
-        all_y_list = self.get_file_list(y_dir, y_file_extension)
-
+        all_y_list = []
+        all_y = []
+        if y_list is not None:
+            all_y_list = y_list
+        else:
+            all_y_list = self.get_file_list(y_dir, y_file_extension)
         all_X = [f[f.rfind("/") + 1:f.rfind(".")] for f in all_X_list]
         all_y = [f[f.rfind("/") + 1:f.rfind(".")] for f in all_y_list]
         matched_list = [element for element in all_y if element in all_X]
@@ -107,11 +113,22 @@ class MiniBatchLoader(object):
                     raise StopIteration
                 return minibatch_X, minibatch_y
 
+    def scan_for_human(self):
+        print 'scanning all images for human part labels ... '
+        for i, path_y in tqdm(enumerate(self.train_y_file_list + self.test_y_file_list)):
+            y = self.load_y([path_y])
+            if (y > 0).any():
+                self.human_y_list.append(path_y)
+        self.train_X_file_list, self.train_y_file_list, self.test_X_file_list, self.test_y_file_list = self.split_train_test(self.X_dir, self.y_dir, 0.9, self.human_y_list)
+        print 'found %d images' % len(self.human_y_list) 
+        return len(self.human_y_list)
+        
     # apply for minibatch
     def load_batch(self, minibatch_path_X, minibatch_path_y):
         minibatch_X = self.load_X(minibatch_path_X)
         minibatch_y = self.load_y(minibatch_path_y)
         return minibatch_X, minibatch_y
+
 
     def load_X(self, minibatch_path):
         return np.array([cv2.resize(cv2.imread(f), (self.insize, self.insize)) for f in minibatch_path])
@@ -124,14 +141,15 @@ class MiniBatchLoader(object):
         if "image" in matfile:
             parts_mask = np.transpose(np.expand_dims(d["M"], 0), (1, 2, 0))
         else:
-            object_name = [d["anno"][0, 0][1][0, i][0][0] for i in range(d["anno"][0, 0][1].shape[1])]
-            img_shape = d["anno"][0, 0][1][0, 0][2].shape
+            objects = d["anno"][0,0][1]
+            object_name = [objects[0, i][0][0] for i in range(objects.shape[1])]
+            img_shape = objects[0, 0][2].shape
             parts_mask = np.zeros(img_shape + (1, ))
             for index, obj in enumerate(object_name):
                 if obj == "person":
-                    if not d["anno"][0, 0][1][0, index][3].shape == (0, 0):
-                        for j in range(d["anno"][0, 0][1][0, index][3].shape[1]):
-                            parts_mask[:, :, 0] = (parts_list.index(d["anno"][0, 0][1][0, index][3][0, j][0][0]) + 1) * np.array(d["anno"][0, 0][1][0, index][3][0, j][1])
+                    if not objects[0, index][3].shape == (0, 0):
+                        for j in range(objects[0, index][3].shape[1]):
+                            parts_mask[:, :, 0] = parts_mask[:, :, 0] + merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1])
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize))
         return parts_mask
 
@@ -187,37 +205,44 @@ class MiniBatchLoader(object):
         return rotated_img
 
     def crop_3d(self, img, rand_value1, rand_value2):
-        x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
-        y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-        if x_start < 0 or y_start < 0:
-            return self.pad_3d(img, rand_value1, rand_value2)
-        else:
-            cropped_img = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
-            return cropped_img
+        cropped_img = np.zeros((self.insize, self.insize, img.shape[2])).astype(np.uint8)
+        if img.shape[0] < self.insize or img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1], :] = img.copy()
+        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[:, y_start:y_start + img.shape[1], :] = img[x_start:x_start + self.insize, :, :]
+        elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[x_start:x_start + img.shape[0], :, :] = img[:, y_start:y_start+self.insize, :]
+        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[:,:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
+        return cropped_img
 
     def crop_2d(self, img, rand_value1, rand_value2):
-        x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
-        y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-        if x_start < 0 or y_start < 0:
-            return self.pad_2d(img, rand_value1, rand_value2)
-        else:
-            cropped_img = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
-            return cropped_img
-
-    def pad_3d(self, img, rand_value1, rand_value2):
-        padded_img = np.zeros((self.insize, self.insize, img.shape[2])).astype(np.uint8)
-        x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
-        y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-        padded_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1], :] = img.copy()
-        return padded_img
-
-    def pad_2d(self, img, rand_value1, rand_value2):
-        padded_img = np.zeros((self.insize, self.insize)).astype(np.uint8)
-        x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
-        y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-        padded_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1]] = img.copy()
-        return padded_img
-
+        cropped_img = np.zeros((self.insize, self.insize)).astype(np.uint8)
+        if img.shape[0] < self.insize or img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1]] = img.copy()
+        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
+            cropped_img[:, y_start:y_start + img.shape[1]] = img[x_start:x_start + self.insize, :]
+        elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[x_start:x_start + img.shape[0], :] = img[:, y_start:y_start+self.insize]
+        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
+            y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
+            cropped_img[:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
+        return cropped_img
 
     def subtract_mean_one(self, img, mean_image="mean.jpg"):
         mean_img = cv2.imread(mean_image)
@@ -233,12 +258,15 @@ import numpy as np
 import cv2
 from scipy.ndimage import zoom
 import scipy.io as sio
+import data
 
 parts_list = ['head', 'leye', 'reye', 'lear', 'rear',
               'lebrow', 'rebrow', 'nose', 'mouth', 'hair',
               'torso', 'neck', 'llarm', 'luarm', 'lhand',
               'rlarm', 'ruarm', 'rhand', 'llleg', 'luleg',
               'lfoot', 'rlleg', 'ruleg', 'rfoot']
+merged_parts_list = {'head':1, 'leye':1, 'reye':1, 'lear':1, 'rear':1, 'lebrow':1, 'rebrow':1, 'nose':1, 'mouth': 1, 'hair': 1, 'torso': 2, 'neck': 2, 'llarm': 3, 'luarm': 4, 'lhand':5, 'rlarm': 6, 'ruarm': 7, 'rhand': 8, 'llleg': 9, 'luleg': 10, 'lfoot':11, 'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
+
 X_dir = "./data/img/"
 y_dir = "./data/mask/"
 

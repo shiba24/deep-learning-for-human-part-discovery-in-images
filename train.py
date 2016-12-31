@@ -73,7 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # model setteing
-    model = HumanPartsNet(n_class=25)
+    model = HumanPartsNet(n_class=15)
     if args.pretrainedmodel is not None:
         from chainer import serializers
         serializers.load_npz(args.pretrainedmodel, model)
@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     # prepare data feeder
     MiniBatchLoader = MiniBatchLoader(X_dir, y_dir, batchsize=args.batchsize, insize=model.insize, train=True)
+    MiniBatchLoader.scan_for_human()
     debugger = Debugger()
 
     # Learning loop
