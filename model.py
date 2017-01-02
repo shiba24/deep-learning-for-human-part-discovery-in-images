@@ -152,8 +152,10 @@ class HumanPartsNet(chainer.Chain):
 
     def calculate_accuracy(self, predictions, truths):
         if cuda.get_array_module(predictions.data) == cuda.cupy:
-            predictions = cuda.to_cpu(predictions.data)
-            truths = cuda.to_cpu(truths.data)
+            with predictions.data.device:
+                predictions =  predictions.data.get()
+            with truths.data.device:
+                truths = truths.data.get()
         else:
             predictions = predictions.data
             truths = truths.data
