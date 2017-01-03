@@ -43,7 +43,7 @@ def test(model, MiniBatchLoader, mean_loss, ac):
     MiniBatchLoader.train = False
     for X, y in tqdm(MiniBatchLoader):
         x = chainer.Variable(xp.asarray(X, dtype=xp.float32), volatile='on')
-        t = chainer.Variable(xp.asarray(y, dtype=xp.int32), volatile='on')
+        t = chainer.Variable(xp.asarray(y.astype(np.int32), dtype=xp.int32), volatile='on')
         loss = model(x, t)
         sum_loss += float(loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
