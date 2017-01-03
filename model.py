@@ -83,7 +83,8 @@ class HumanPartsNet(chainer.Chain):
     def __call__(self, x, t):
         h = self.predict_proba(x)
         self.loss = F.softmax_cross_entropy(h, t)
-        self.accuracy = self.calculate_accuracy(h, t)
+        #self.accuracy = self.calculate_accuracy(h, t)
+        self.accuracy = F.accuracy(h, t, ignore_label = -1)
         return self.loss
 
     def predict(self, x):
