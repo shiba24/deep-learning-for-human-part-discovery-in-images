@@ -26,7 +26,7 @@ def train(model, optimizer, MiniBatchLoader, mean_loss, ac):
     MiniBatchLoader.train = True
     for X, y in tqdm(MiniBatchLoader):
         x = chainer.Variable(xp.asarray(X, dtype=xp.float32), volatile='off')
-        t = chainer.Variable(xp.asarray(y, dtype=xp.int32), volatile='off')
+        t = chainer.Variable(xp.asarray(y.astype(np.int32), dtype=xp.int32), volatile='off')
         # optimizer.weight_decay(0.0001)
         optimizer.update(model, x, t)
         sum_loss += float(model.loss.data) * len(t.data)
