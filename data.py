@@ -149,7 +149,7 @@ class MiniBatchLoader(object):
                 if obj == "person":
                     if not objects[0, index][3].shape == (0, 0):
                         for j in range(objects[0, index][3].shape[1]):
-                            parts_mask[parts_mask == 0] = merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1])
+                            parts_mask[:, :, 0] = np.where(parts_mask[:, :, 0] == 0, merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1]), 0)
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize), interpolation = cv2.INTER_NEAREST)
         return parts_mask
 
