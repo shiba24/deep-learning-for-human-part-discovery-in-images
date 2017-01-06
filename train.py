@@ -87,7 +87,8 @@ if __name__ == "__main__":
     else: xp = np
 
     # Setup optimizer
-    optimizer = optimizers.MomentumSGD(lr=1e-10, momentum=0.99)
+    # optimizer = optimizers.MomentumSGD(lr=1e-10, momentum=0.99)
+    optimizer = optimizers.Adam()
     optimizer.setup(model)
 
     # prepare data feeder
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     debugger = Debugger()
 
     # error checking enabled
-    chainer.set_debug(True)
+    # chainer.set_debug(True)
 
     # Learning loop
     train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
