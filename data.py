@@ -195,24 +195,24 @@ class MiniBatchLoader(object):
         return self.crop_3d(img, change_index[2], change_index[3])
 
     def change_shape_2d(self, img, change_index):
-        img = self.scaling(img, change_index[0], use_integer = True)
-        img = self.rotation(img, change_index[1], use_integer = True)
+        img = self.scaling(img, change_index[0], use_integer=True)
+        img = self.rotation(img, change_index[1], use_integer=True)
         return self.crop_2d(img, change_index[2], change_index[3])
 
-    def scaling(self, img, rand_value, use_integer = False):
+    def scaling(self, img, rand_value, use_integer=False):
         scaling_factor = rand_value * 0.7 + 0.7
         resized = (int(img.shape[0] * scaling_factor), int(img.shape[1] * scaling_factor))
         if use_integer:
-            resized_img = cv2.resize(img, resized, interpolation = cv2.INTER_NEAREST)
+            resized_img = cv2.resize(img, resized, interpolation=cv2.INTER_NEAREST)
         else:
             resized_img = cv2.resize(img, resized)
         return resized_img
 
-    def rotation(self, img, rand_value, use_integer = False):
+    def rotation(self, img, rand_value, use_integer=False):
         rotate_deg = rand_value * 60 - 30
         M = cv2.getRotationMatrix2D(img.shape[:2], rotate_deg, 1)
         if use_integer:
-            rotated_img = cv2.warpAffine(img, M, img.shape[:2], flags = cv2.INTER_NEAREST)
+            rotated_img = cv2.warpAffine(img, M, img.shape[:2], flags=cv2.INTER_NEAREST)
         else:
             rotated_img = cv2.warpAffine(img, M, img.shape[:2])
         return rotated_img
