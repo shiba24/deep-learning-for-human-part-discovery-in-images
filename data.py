@@ -1,4 +1,5 @@
-import os, glob
+import os
+import glob
 import numpy as np
 import cv2
 import scipy.io as sio
@@ -15,7 +16,14 @@ parts_list = ['head', 'leye', 'reye', 'lear', 'rear',
               'torso', 'neck', 'llarm', 'luarm', 'lhand',
               'rlarm', 'ruarm', 'rhand', 'llleg', 'luleg',
               'lfoot', 'rlleg', 'ruleg', 'rfoot']
-merged_parts_list = {'head':1, 'leye':1, 'reye':1, 'lear':1, 'rear':1, 'lebrow':1, 'rebrow':1, 'nose':1, 'mouth': 1, 'hair': 1, 'torso': 2, 'neck': 2, 'llarm': 3, 'luarm': 4, 'lhand':5, 'rlarm': 6, 'ruarm': 7, 'rhand': 8, 'llleg': 9, 'luleg': 10, 'lfoot':11, 'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
+merged_parts_list = {'head': 1, 'leye': 1, 'reye': 1, 'lear': 1, 'rear': 1,
+                     'lebrow': 1, 'rebrow': 1, 'nose': 1, 'mouth': 1, 'hair': 1,
+                     'torso': 2, 'neck': 2,
+                     'llarm': 3, 'luarm': 4, 'lhand': 5,
+                     'rlarm': 6, 'ruarm': 7, 'rhand': 8,
+                     'llleg': 9, 'luleg': 10, 'lfoot': 11,
+                     'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
+
 
 class MiniBatchLoader(object):
     def __init__(self, X_dir, y_dir, batchsize, insize=300, train=True):
@@ -32,12 +40,12 @@ class MiniBatchLoader(object):
             directory = [directory]
         file_list = []
         for d in directory:
-            if d[-1] != '/':
-                d += '/'
+            if d[-1] != os.sep:
+                d += os.sep
             file_list += glob.glob(d + "*" + file_extension)
         return file_list
 
-    def split_train_test(self, X_dir, y_dir, split_ratio=.9, y_list = None):
+    def split_train_test(self, X_dir, y_dir, split_ratio=.9, y_list=None):
         all_X_list = self.get_file_list(X_dir, X_file_extension)
         all_y_list = []
         all_y = []
@@ -45,8 +53,8 @@ class MiniBatchLoader(object):
             all_y_list = y_list
         else:
             all_y_list = self.get_file_list(y_dir, y_file_extension)
-        all_X = [f[f.rfind("/") + 1:f.rfind(".")] for f in all_X_list]
-        all_y = [f[f.rfind("/") + 1:f.rfind(".")] for f in all_y_list]
+        all_X = [f[f.rfind(os.sep) + 1:f.rfind(".")] for f in all_X_list]
+        all_y = [f[f.rfind(os.sep) + 1:f.rfind(".")] for f in all_y_list]
         matched_list = [element for element in all_y if element in all_X]
         self.datasize = len(matched_list)
         self.datasize_train = int(self.datasize * split_ratio)
@@ -120,15 +128,14 @@ class MiniBatchLoader(object):
             if (y > 0).any():
                 self.human_y_list.append(path_y)
         self.train_X_file_list, self.train_y_file_list, self.test_X_file_list, self.test_y_file_list = self.split_train_test(self.X_dir, self.y_dir, 0.9, self.human_y_list)
-        print 'found %d images' % len(self.human_y_list) 
+        print 'found %d images' % len(self.human_y_list)
         return len(self.human_y_list)
-        
+
     # apply for minibatch
     def load_batch(self, minibatch_path_X, minibatch_path_y):
         minibatch_X = self.load_X(minibatch_path_X)
         minibatch_y = self.load_y(minibatch_path_y)
         return minibatch_X, minibatch_y
-
 
     def load_X(self, minibatch_path):
         return np.array([cv2.resize(cv2.imread(f), (self.insize, self.insize)) for f in minibatch_path])
@@ -141,7 +148,7 @@ class MiniBatchLoader(object):
         if "image" in matfile:
             parts_mask = np.transpose(np.expand_dims(d["M"], 0), (1, 2, 0))
         else:
-            objects = d["anno"][0,0][1]
+            objects = d["anno"][0, 0][1]
             object_name = [objects[0, i][0][0] for i in range(objects.shape[1])]
             img_shape = objects[0, 0][2].shape
             parts_mask = np.zeros(img_shape + (1, ))
@@ -172,7 +179,7 @@ class MiniBatchLoader(object):
         subtracted_img = images - 126
         return subtracted_img / 255.
 
-    def calc_mean(self):        
+    def calc_mean(self):
         pass
 
     # apply for each image
@@ -209,19 +216,19 @@ class MiniBatchLoader(object):
         if img.shape[0] < self.insize or img.shape[1] < self.insize:
             x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
             y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1], :] = img.copy()
-        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1], :] = img.copy()
+        elif img.shape[0] >= self.insize and img.shape[1] < self.insize:
             x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
             y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
             cropped_img[:, y_start:y_start + img.shape[1], :] = img[x_start:x_start + self.insize, :, :]
         elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
             x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
             y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-            cropped_img[x_start:x_start + img.shape[0], :, :] = img[:, y_start:y_start+self.insize, :]
-        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            cropped_img[x_start:x_start + img.shape[0], :, :] = img[:, y_start:y_start + self.insize, :]
+        elif img.shape[0] >= self.insize and img.shape[1] >= self.insize:
             x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
             y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-            cropped_img[:,:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
+            cropped_img[:, :, :] = img[x_start:x_start + self.insize, y_start:y_start + self.insize, :]
         return cropped_img
 
     def crop_2d(self, img, rand_value1, rand_value2):
@@ -229,27 +236,25 @@ class MiniBatchLoader(object):
         if img.shape[0] < self.insize or img.shape[1] < self.insize:
             x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
             y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
-            cropped_img[x_start:x_start + img.shape[0], y_start:y_start+img.shape[1]] = img.copy()
-        elif img.shape[0] >=self.insize and img.shape[1] < self.insize:
+            cropped_img[x_start:x_start + img.shape[0], y_start:y_start + img.shape[1]] = img.copy()
+        elif img.shape[0] >= self.insize and img.shape[1] < self.insize:
             x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
             y_start = np.int(rand_value2 * (self.insize - img.shape[1]))
             cropped_img[:, y_start:y_start + img.shape[1]] = img[x_start:x_start + self.insize, :]
         elif img.shape[0] < self.insize and image.shape[1] >= self.insize:
             x_start = np.int(rand_value1 * (self.insize - img.shape[0]))
             y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-            cropped_img[x_start:x_start + img.shape[0], :] = img[:, y_start:y_start+self.insize]
-        elif img.shape[0] >=self.insize and img.shape[1] >= self.insize:
+            cropped_img[x_start:x_start + img.shape[0], :] = img[:, y_start:y_start + self.insize]
+        elif img.shape[0] >= self.insize and img.shape[1] >= self.insize:
             x_start = np.int(rand_value1 * (img.shape[0] - self.insize))
             y_start = np.int(rand_value2 * (img.shape[1] - self.insize))
-            cropped_img[:,:] = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
+            cropped_img[:, :] = img[x_start:x_start + self.insize, y_start:y_start + self.insize]
         return cropped_img
 
     def subtract_mean_one(self, img, mean_image="mean.jpg"):
         mean_img = cv2.imread(mean_image)
         subtracted_img = img - mean_img
         return subtracted_img
-
-
 
 """
 
@@ -280,4 +285,3 @@ minibatch_X, minibatch_y = m.load_batch(minibatch_path_X, minibatch_path_y)
 processed_X, processed_y = m.process_batch(minibatch_X, minibatch_y)
 
 """
-

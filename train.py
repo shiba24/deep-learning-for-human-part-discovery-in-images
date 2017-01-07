@@ -84,7 +84,8 @@ if __name__ == "__main__":
         xp = cuda.cupy
         cuda.get_device(args.gpu).use()
         model.to_gpu()
-    else: xp = np
+    else:
+        xp = np
 
     # Setup optimizer
     optimizer = optimizers.MomentumSGD(lr=1e-10, momentum=0.99)
@@ -112,6 +113,5 @@ if __name__ == "__main__":
             debugger.plot_result(train_mean_loss, test_mean_loss, savename='log.png')
         if args.saveflag == 'on' and epoch % 10 == 0:
             from chainer import serializers
-            serializers.save_hdf5(resultdir + 'humanpartsnet_epoch'+ str(epoch) + '.model', model)
-            serializers.save_hdf5(resultdir + 'humanpartsnet_epoch'+ str(epoch) + '.state', optimizer)
-
+            serializers.save_hdf5(resultdir + 'humanpartsnet_epoch' + str(epoch) + '.model', model)
+            serializers.save_hdf5(resultdir + 'humanpartsnet_epoch' + str(epoch) + '.state', optimizer)
