@@ -102,6 +102,9 @@ if __name__ == "__main__":
     MiniBatchLoader.scan_for_human()
     debugger = Debugger()
 
+    # error checking enabled
+    # chainer.set_debug(True)
+
     # Learning loop
     train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
     stime = time.clock()
@@ -116,7 +119,7 @@ if __name__ == "__main__":
             debugger.writelog(MiniBatchLoader.datasize_train, MiniBatchLoader.datasize_test, MiniBatchLoader.batchsize,
                               'Human part segmentation', stime, etime,
                               train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME=resultdir + 'log.txt')
-            debugger.plot_result(train_mean_loss, test_mean_loss, savename='log.png')
+            debugger.plot_result(train_mean_loss, test_mean_loss, savename=resultdir + 'log.png')
         if args.saveflag == 'on' and epoch % 10 == 0:
             from chainer import serializers
             serializers.save_hdf5(resultdir + 'humanpartsnet_epoch' + str(epoch) + '.model', model)
