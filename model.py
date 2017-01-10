@@ -181,7 +181,7 @@ class HumanPartsNet(chainer.Chain):
         mask0 = predictions.argmax(axis=1).reshape(mask1.shape) > 0
         intersection = xp.bitwise_and(mask0, mask1).sum(axis=1)
         union = xp.bitwise_or(mask0, mask1).sum(axis=1)
-        return (union / intersection).mean(dtype = predictions.dtype)
+        return (intersection / union).mean(dtype = predictions.dtype)
 
 
 def load_VGGmodel():
