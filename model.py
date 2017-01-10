@@ -85,6 +85,7 @@ class HumanPartsNet(chainer.Chain):
         self.loss = F.softmax_cross_entropy(h, t)
         #self.accuracy = self.calculate_accuracy(h, t)
         self.accuracy = F.accuracy(h, t, ignore_label=-1)
+        self.IoU = self.calculate_intersection_of_union(h, t)
         return self.loss
 
     def predict(self, x):
@@ -170,6 +171,17 @@ class HumanPartsNet(chainer.Chain):
         masked_truths = truths[mask] 
         s = (masked_reduced_preditions == masked_truths).mean()
         return s
+        
+    def calculate_intersection_of_union(self, predictions, truths):
+        """ IoU metrics for human silhouette """
+        predictions = predictions.data
+        truths = truths.data
+        xp = cuda.get_array_module(predictions)        
+        mask1 = truths.reshape((truths.shape[0], truths.shape[1]*truths.shape[2])) > 0
+        mask0 = predictions.argmax(axis=1).reshape(mask1.shape) > 0
+        intersection = xp.bitwise_and(mask0, mask1).sum(axis=1)
+        union = xp.bitwise_or(mask0, mask1).sum(axis=1)
+        return (union / intersection).mean(dtype = predictions.dtype)
 
 
 def load_VGGmodel():

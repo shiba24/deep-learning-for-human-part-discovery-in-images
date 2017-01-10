@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 class Debugger(object):
     """Debugger for ImageGenerater dataset"""
     def writelog(self, N_train, N_test, batchsize, netstructure, stime, etime,
-                 train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME='log.txt'):
+                 train_mean_loss, train_ac, train_IoU, 
+                 test_mean_loss, test_ac, test_IoU, 
+                 epoch, LOG_FILENAME='log.txt'):
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format='%(asctime)s %(message)s')
         logging.info('New trial **************************************************\n'
                      'All data: %d frames, train: %d frames / test: %d frames.\n'
@@ -17,16 +19,20 @@ class Debugger(object):
                      '   Total Time = %.3f sec.\n'
                      '   Epoch: 1,  train mean loss=  %.5f, test mean loss=  %.5f.\n'
                      '              train accuracy =  %.5f, test accuracy =  %.5f.\n'
-                     '   Epoch: %d, train mean loss=  %.5f, test mean loss=  %.3f.\n'
-                     '              train accuracy =  %.5f, test accuracy =  %.5f.\n',
+                     '              train IoU      =  %.5f, test IoU      =  %.5f.\n'
+                     '   Epoch: %d, train mean loss=  %.5f, test mean loss=  %.5f.\n'
+                     '              train accuracy =  %.5f, test accuracy =  %.5f.\n'
+                     '              train IoU      =  %.5f, test IoU      =  %.5f.\n',
                      N_train + N_test, N_train, N_test,
                      netstructure, batchsize,
                      etime - stime,
                      train_mean_loss[0], test_mean_loss[0],
                      train_ac[0], test_ac[0],
+                     train_IoU[0], test_IoU[0],
                      epoch + 1,
                      train_mean_loss[-1], test_mean_loss[-1],
-                     train_ac[-1], test_ac[-1])
+                     train_ac[-1], test_ac[-1],
+                     train_IoU[-1], test_IoU[-1])
         f = open(LOG_FILENAME, 'rt')
         try:
             body = f.read()

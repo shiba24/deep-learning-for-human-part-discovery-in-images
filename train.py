@@ -20,29 +20,27 @@ X_dir = "./data/img/"
 y_dir = "./data/mask/"
 
 
-def train(model, optimizer, MiniBatchLoader, mean_loss, ac):
-    sum_accuracy, sum_loss = 0, 0
+def train(model, optimizer, MiniBatchLoader, mean_loss, ac, IoU):
+    sum_accuracy, sum_loss, sum_IoU = 0, 0, 0
     model.train = True
     MiniBatchLoader.train = True
     for X, y in tqdm(MiniBatchLoader):
         x = chainer.Variable(xp.asarray(X, dtype=xp.float32), volatile='off')
         t = chainer.Variable(xp.asarray(y.astype(np.int32), dtype=xp.int32), volatile='off')
         # optimizer.weight_decay(0.0001)
-        try:
-            optimizer.update(model, x, t)
-        except:
-            with x.data.device:
-                np.savez('input_batch.npz', x=x.data.get(), z=z.data.get())
+        optimizer.update(model, x, t)
         sum_loss += float(model.loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
-    print('train mean loss={}, accuracy={}'.format(sum_loss / MiniBatchLoader.datasize_train, sum_accuracy / MiniBatchLoader.datasize_train))
+        sum_IoU += float(model.IoU) * len(t.data)
     mean_loss.append(sum_loss / MiniBatchLoader.datasize_train)
     ac.append(sum_accuracy / MiniBatchLoader.datasize_train)
-    return model, optimizer, mean_loss, ac
+    IoU.append(sum_IoU / MiniBatchLoader.datasize_train)
+    print('train mean loss={}, accuracy={}, IoU={}'.format(mean_loss[-1], ac[-1], IoU[-1]))
+    return model, optimizer, mean_loss, ac, IoU
 
 
-def test(model, MiniBatchLoader, mean_loss, ac):
-    sum_accuracy, sum_loss = 0, 0
+def test(model, MiniBatchLoader, mean_loss, ac, IoU):
+    sum_accuracy, sum_loss, sum_IoU = 0, 0, 0
     model.train = False
     MiniBatchLoader.train = False
     for X, y in tqdm(MiniBatchLoader):
@@ -51,11 +49,12 @@ def test(model, MiniBatchLoader, mean_loss, ac):
         loss = model(x, t)
         sum_loss += float(loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
-    print('test  mean loss={}, accuracy={}'.format(
-        sum_loss / MiniBatchLoader.datasize_test, sum_accuracy / MiniBatchLoader.datasize_test))
+        sum_IoU += float(model.IoU) * len(t.data)
     mean_loss.append(sum_loss / MiniBatchLoader.datasize_test)
     ac.append(sum_accuracy / MiniBatchLoader.datasize_test)
-    return model, mean_loss, ac
+    IoU.append(sum_IoU / MiniBatchLoader.datasize_test)
+    print('train mean loss={}, accuracy={}, IoU={}'.format(mean_loss[-1], ac[-1], IoU[-1]))
+    return model, mean_loss, ac, IoU
 
 
 if __name__ == "__main__":
@@ -82,8 +81,8 @@ if __name__ == "__main__":
     model = HumanPartsNet(n_class=15)
     if args.pretrainedmodel is not None:
         from chainer import serializers
-        serializers.load_npz(args.pretrainedmodel, model)
-
+        serializers.load_hdf5(args.pretrainedmodel, model)
+        
     # GPU settings
     if args.gpu >= 0:
         cuda.check_cuda_available()
@@ -106,19 +105,21 @@ if __name__ == "__main__":
     # chainer.set_debug(True)
 
     # Learning loop
-    train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], []
+    train_IoU, test_IoU, train_ac, test_ac, train_mean_loss, test_mean_loss = [], [], [], [], [], []
     stime = time.clock()
     for epoch in six.moves.range(1, args.epoch + 1):
         print('Epoch', epoch, ': training...')
-        model, optimizer, train_mean_loss, train_ac = train(model, optimizer, MiniBatchLoader, train_mean_loss, train_ac)
+        model, optimizer, train_mean_loss, train_ac, train_IoU = train(model, optimizer, MiniBatchLoader, train_mean_loss, train_ac, train_IoU)
         print('Epoch', epoch, ': testing...')
-        model, test_mean_loss, test_ac = test(model, MiniBatchLoader, test_mean_loss, test_ac)
+        model, test_mean_loss, test_ac, test_IoU = test(model, MiniBatchLoader, test_mean_loss, test_ac, test_IoU)
 
         if args.logflag == 'on':
             etime = time.clock()
             debugger.writelog(MiniBatchLoader.datasize_train, MiniBatchLoader.datasize_test, MiniBatchLoader.batchsize,
                               'Human part segmentation', stime, etime,
-                              train_mean_loss, train_ac, test_mean_loss, test_ac, epoch, LOG_FILENAME=resultdir + 'log.txt')
+                              train_mean_loss, train_ac, train_IoU, 
+                              test_mean_loss, test_ac, test_IoU, 
+                              epoch, LOG_FILENAME=resultdir + 'log.txt')
             debugger.plot_result(train_mean_loss, test_mean_loss, savename=resultdir + 'log.png')
         if args.saveflag == 'on' and epoch % 10 == 0:
             from chainer import serializers
