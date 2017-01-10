@@ -28,7 +28,11 @@ def train(model, optimizer, MiniBatchLoader, mean_loss, ac):
         x = chainer.Variable(xp.asarray(X, dtype=xp.float32), volatile='off')
         t = chainer.Variable(xp.asarray(y.astype(np.int32), dtype=xp.int32), volatile='off')
         # optimizer.weight_decay(0.0001)
-        optimizer.update(model, x, t)
+        try:
+            optimizer.update(model, x, t)
+        except:
+            with x.data.device:
+                np.savez('input_batch.npz', x=x.data.get(), z=z.data.get())
         sum_loss += float(model.loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
     print('train mean loss={}, accuracy={}'.format(sum_loss / MiniBatchLoader.datasize_train, sum_accuracy / MiniBatchLoader.datasize_train))
@@ -56,7 +60,7 @@ def test(model, MiniBatchLoader, mean_loss, ac):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Human parts network')
-    parser.add_argument('--batchsize', '-b', default=100, type=int,
+    parser.add_argument('--batchsize', '-b', default=3, type=int,
                         help='Batch size of training')
     parser.add_argument('--epoch', '-e', default=100, type=int,
                         help='Number of epoch of training')
@@ -66,6 +70,8 @@ if __name__ == "__main__":
                         default='on', help='Writing and plotting result flag')
     parser.add_argument('--optimizer', '-o', choices=('adam', 'adagrad', 'sgd'),
                         default='sgd', help='Optimizer algorithm')
+    parser.add_argument('--lr', '-r', default=1e-7, type=float,
+                        help='Learning rate of used optimizer')
     parser.add_argument('--pretrainedmodel', '-p', default=None,
                         help='Path to pretrained model')
     parser.add_argument('--saveflag', '-s', choices=('on', 'off'),
@@ -88,7 +94,7 @@ if __name__ == "__main__":
         xp = np
 
     # Setup optimizer
-    optimizer = optimizers.MomentumSGD(lr=1e-10, momentum=0.99)
+    optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.99)
     optimizer.setup(model)
 
     # prepare data feeder
