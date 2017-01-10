@@ -45,17 +45,14 @@ if not isdir(args.file):
     x = chainer.Variable(img.astype(np.float32), volatile='on')
     y = model.predict(x)
     mask = np.argmax(y.data[0], axis=0)
-    mask_norm = mask.astype(np.float32) / np.max(mask).astype(np.float32)
-    cv2.imwrite(resultdir + bname, cv2.applyColorMap(mask_norm, cv2.COLORMAP_HOT))
+    np.save(resultdir + bname + '.npy', mask)
 else:
-    for f in os.listdir(args.file):
+    for f in tqdm(os.listdir(args.file)):
         if f.endswith(args.extension):
-            print('Processing ' + f)
             bname = basename(f)
             img = np.transpose(np.expand_dims(standardize(cv2.resize(
                 cv2.imread(join(args.file, f)), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
             x = chainer.Variable(img.astype(np.float32), volatile='on')
             y = model.predict(x)
             mask = np.argmax(y.data[0], axis=0)
-            mask_norm = mask.astype(np.float32) / np.max(mask).astype(np.float32)
-            cv2.imwrite(resultdir + bname, cv2.applyColorMap(mask_norm, cv2.COLORMAP_HOT))
+            np.save(resultdir + bname + '.npy', mask)
