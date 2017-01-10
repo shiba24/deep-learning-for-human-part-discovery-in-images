@@ -9,7 +9,7 @@ from model import HumanPartsNet
 from data import MiniBatchLoader
 import chainer
 import os
-from os.path import isdir, basename
+from os.path import isdir, basename, join
 
 import cv2
 
@@ -50,9 +50,10 @@ if not isdir(args.file):
 else:
     for f in os.listdir(args.file):
         if f.endswith(args.extension):
+            print('Processing ' + f)
             bname = basename(f)
             img = np.transpose(np.expand_dims(standardize(cv2.resize(
-                cv2.imread(f), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
+                cv2.imread(join(args.file, f)), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
             x = chainer.Variable(img.astype(np.float32), volatile='on')
             y = model.predict(x)
             mask = np.argmax(y.data[0], axis=0)
