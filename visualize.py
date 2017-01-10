@@ -8,7 +8,8 @@ import time
 from model import HumanPartsNet
 from data import MiniBatchLoader
 import chainer
-from os.path import basename
+import os
+from os.path import isdir, basename
 
 import cv2
 
@@ -27,6 +28,8 @@ parser.add_argument('--pretrainedmodel', '-p', default=None,
                     help='Path to pretrained model')
 parser.add_argument('--file', '-f', type=str,
                     help='Path to image to predict mask')
+parser.add_argument('--extension', '-e', type=str,
+                    help='Extension for processed file')
 args = parser.parse_args()
 
 # model setteing
@@ -35,11 +38,23 @@ if args.pretrainedmodel is not None:
     from chainer import serializers
     serializers.load_npz(args.pretrainedmodel, model)
 
-# img = np.transpose(np.expand_dims(cv2.imread(args.file), 0), (0, 3, 1, 2)) / 255.
-bname = basename(args.file)
-img = np.transpose(np.expand_dims(standardize(cv2.resize(cv2.imread(args.file), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
-x = chainer.Variable(img.astype(np.float32), volatile='on')
-y = model.predict(x)
-mask = np.argmax(y.data[0], axis=0)
-
-np.save(resultdir + bname + '.npy', mask)
+if not isdir(args.file):
+    bname = basename(args.file)
+    img = np.transpose(np.expand_dims(standardize(cv2.resize(
+        cv2.imread(args.file), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
+    x = chainer.Variable(img.astype(np.float32), volatile='on')
+    y = model.predict(x)
+    mask = np.argmax(y.data[0], axis=0)
+    mask_norm = mask.astype(np.float32) / np.max(mask).astype(np.float32)
+    cv2.imwrite(resultdir + bname, cv2.applyColorMap(mask_norm, cv2.COLORMAP_HOT))
+else:
+    for f in os.listdir(args.file):
+        if f.endswith(args.extension):
+            bname = basename(f)
+            img = np.transpose(np.expand_dims(standardize(cv2.resize(
+                cv2.imread(f), (300, 300)).astype(np.uint8)), 0), (0, 3, 1, 2))
+            x = chainer.Variable(img.astype(np.float32), volatile='on')
+            y = model.predict(x)
+            mask = np.argmax(y.data[0], axis=0)
+            mask_norm = mask.astype(np.float32) / np.max(mask).astype(np.float32)
+            cv2.imwrite(resultdir + bname, cv2.applyColorMap(mask_norm, cv2.COLORMAP_HOT))
