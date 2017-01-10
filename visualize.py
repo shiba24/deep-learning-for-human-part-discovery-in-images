@@ -17,7 +17,7 @@ X_dir = "./data/img/"
 y_dir = "./data/mask/"
 
 def standardize(image):
-    subtracted_img = images - 126
+    subtracted_img = image - 126
     return subtracted_img / 255.
 
 parser = argparse.ArgumentParser(description='Human parts network')
