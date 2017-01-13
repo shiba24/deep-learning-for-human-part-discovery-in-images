@@ -24,7 +24,6 @@ merged_parts_list = {'head': 1, 'leye': 1, 'reye': 1, 'lear': 1, 'rear': 1,
                      'llleg': 9, 'luleg': 10, 'lfoot': 11,
                      'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
 
-
 class MiniBatchLoader(object):
     def __init__(self, X_dir, y_dir, batchsize, insize=300, train=True):
         self.X_dir = X_dir
@@ -158,6 +157,7 @@ class MiniBatchLoader(object):
                         for j in range(objects[0, index][3].shape[1]):
                             parts_mask[:, :, 0] = np.where(parts_mask[:, :, 0] == 0, merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1]), parts_mask[:, :, 0])
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize), interpolation = cv2.INTER_NEAREST)
+        parts_mask = (parts_mask > 0).astype(np.uint8)
         return parts_mask
 
     def process_batch(self, minibatch_X, minibatch_y):

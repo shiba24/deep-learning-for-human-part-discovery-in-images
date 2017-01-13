@@ -26,7 +26,7 @@ class HumanPartsNet(chainer.Chain):
     """
     insize = 300
 
-    def __init__(self, VGGModel=None, n_class=15):
+    def __init__(self, VGGModel=None, n_class=2):
         if VGGModel is None:
             self.wb = load_VGGmodel()
         else:
@@ -179,8 +179,8 @@ class HumanPartsNet(chainer.Chain):
         xp = cuda.get_array_module(predictions)        
         mask1 = truths.reshape((truths.shape[0], truths.shape[1]*truths.shape[2])) > 0
         mask0 = predictions.argmax(axis=1).reshape(mask1.shape) > 0
-        intersection = xp.bitwise_and(mask0, mask1).sum(axis=1)
-        union = xp.bitwise_or(mask0, mask1).sum(axis=1)
+        intersection = xp.logical_and(mask0, mask1).sum(axis=1)
+        union = xp.logical_or(mask0, mask1).sum(axis=1)
         return (intersection.astype(predictions.dtype)  / union.astype(predictions.dtype)).mean()
 
 

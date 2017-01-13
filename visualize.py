@@ -33,7 +33,7 @@ parser.add_argument('--extension', '-e', type=str,
 args = parser.parse_args()
 
 # model setteing
-model = HumanPartsNet(n_class=15)
+model = HumanPartsNet(n_class=2)
 if args.pretrainedmodel is not None:
     from chainer import serializers
     serializers.load_hdf5(args.pretrainedmodel, model)
