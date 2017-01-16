@@ -48,19 +48,24 @@ class HumanPartsNet(chainer.Chain):
             conv5_2=L.Convolution2D(512, 512, 3, stride=1, pad=1, initialW=self.wb["conv5_2_W"], initial_bias=self.wb["conv5_2_b"]),
             conv5_3=L.Convolution2D(512, 512, 3, stride=1, pad=1, initialW=self.wb["conv5_3_W"], initial_bias=self.wb["conv5_3_b"]),
  
-            upsample_pool1=L.Convolution2D(64, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool2=L.Convolution2D(128, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool3=L.Convolution2D(256, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool4=L.Convolution2D(512, self.n_class, ksize=1, stride=1, pad=0),
+            upsample_pool1=L.Convolution2D(64, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool2=L.Convolution2D(128, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool3=L.Convolution2D(256, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool4=L.Convolution2D(512, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
 
             fc6_conv=L.Convolution2D(512, 4096, 7, stride=1, pad=0, initialW=self.wb["fc6_W"], initial_bias=self.wb["fc6_b"]),
             fc7_conv=L.Convolution2D(4096, 4096, 1, stride=1, pad=0, initialW=self.wb["fc7_W"], initial_bias=self.wb["fc7_b"]),
 
-            upconv1=L.Deconvolution2D(4096, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv2=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv3=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv4=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv5=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),            
+            upconv1=L.Deconvolution2D(4096, self.n_class, ksize= 4, stride=2, pad=0, nobias=True, 
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, 4096])),
+            upconv2=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv3=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv4=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv5=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),            
         )
         self.train = True
         del self.wb
@@ -79,6 +84,23 @@ class HumanPartsNet(chainer.Chain):
     @staticmethod
     def calc_offset(in_shape, out_shape):
         return [(i - j) / 2 for i, j in zip(in_shape, out_shape) if i != j]
+
+    @staticmethod
+    def get_deconv_filter(f_shape):
+        from math import ceil
+        width = f_shape[0]
+        heigh = f_shape[0]
+        f = ceil(width/2.0)
+        c = (2 * f - 1 - f % 2) / (2.0 * f)
+        bilinear = np.zeros([f_shape[0], f_shape[1]])
+        for x in range(width):
+            for y in range(heigh):
+                value = (1 - abs(x / f - c)) * (1 - abs(y / f - c))
+                bilinear[x, y] = value
+        weights = np.zeros(f_shape, dtype=np.float32)
+        for i in range(f_shape[2]):
+            weights[:, :, i, i] = bilinear
+        return weights.transpose([3, 2, 0, 1])
 
     def __call__(self, x, t):
         h = self.predict_proba(x)
@@ -179,8 +201,8 @@ class HumanPartsNet(chainer.Chain):
         xp = cuda.get_array_module(predictions)        
         mask1 = truths.reshape((truths.shape[0], truths.shape[1]*truths.shape[2])) > 0
         mask0 = predictions.argmax(axis=1).reshape(mask1.shape) > 0
-        intersection = xp.logical_and(mask0, mask1).sum(axis=1)
-        union = xp.logical_or(mask0, mask1).sum(axis=1)
+        intersection = xp.logical_and(mask0, mask1).sum(axis=1) + 1
+        union = xp.logical_or(mask0, mask1).sum(axis=1) + 1
         return (intersection.astype(predictions.dtype)  / union.astype(predictions.dtype)).mean()
 
 

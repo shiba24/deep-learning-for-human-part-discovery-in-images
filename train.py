@@ -93,7 +93,8 @@ if __name__ == "__main__":
         xp = np
 
     # Setup optimizer
-    optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.99)
+    # optimizer = optimizers.MomentumSGD(lr=args.lr, momentum=0.99)
+    optimizer = optimizers.Adam(alpha=args.lr)
     optimizer.setup(model)
 
     # prepare data feeder
