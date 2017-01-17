@@ -29,7 +29,7 @@ class Debugger(object):
                      train_mean_loss[0], test_mean_loss[0],
                      train_ac[0], test_ac[0],
                      train_IoU[0], test_IoU[0],
-                     epoch + 1,
+                     epoch,
                      train_mean_loss[-1], test_mean_loss[-1],
                      train_ac[-1], test_ac[-1],
                      train_IoU[-1], test_IoU[-1])
