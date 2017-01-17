@@ -161,13 +161,17 @@ class MiniBatchLoader(object):
         return parts_mask
 
     def process_batch(self, minibatch_X, minibatch_y):
-        change_index = np.random.random((minibatch_X.shape[0], 4))
-        delta_hue = np.random.uniform(-18, 18, (minibatch_X.shape[0])).astype(np.int8)            # in opencv, hue is [0, 179]
-        processed_X = np.array([self.change_shape_3d(self.change_hue(minibatch_X[i, :, :, :], delta_hue[i]),
-                                                     change_index[i]) for i in range(len(minibatch_X))])
-        processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
-                                                     change_index[i]) for i in range(len(minibatch_y))])
-        reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w
+        if self.train:
+            change_index = np.random.random((minibatch_X.shape[0], 4))
+            delta_hue = np.random.uniform(-18, 18, (minibatch_X.shape[0])).astype(np.int8)            # in opencv, hue is [0, 179]
+            processed_X = np.array([self.change_shape_3d(self.change_hue(minibatch_X[i, :, :, :], delta_hue[i]),
+                                                         change_index[i]) for i in range(len(minibatch_X))])
+            processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
+                                                         change_index[i]) for i in range(len(minibatch_y))])
+        else:
+            processed_X = minibatch_X
+            processed_y = minibatch_y
+        reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w        
         # reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
         # reshaped_y = np.transpose(processed_y, (1, 0, 2, 3))
         return reshaped_X, processed_y
