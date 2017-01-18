@@ -89,7 +89,7 @@ class HumanPartsNet(chainer.Chain):
     def get_deconv_filter(f_shape):
         from math import ceil
         width = f_shape[0]
-        heigh = f_shape[0]
+        heigh = f_shape[1]
         f = ceil(width/2.0)
         c = (2 * f - 1 - f % 2) / (2.0 * f)
         bilinear = np.zeros([f_shape[0], f_shape[1]])
