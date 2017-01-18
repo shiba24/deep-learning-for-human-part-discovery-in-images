@@ -39,7 +39,9 @@ python train.py --help
 
 ## GPU memory requirement
 
-Now in prep.
+Citation from the original paper:
+
+> Each minibatch consists of just one image. The learning rate and momentum are fixed to 1e 10 and 0.99, respectively. We train the   refinement layer by layer, which takes two days per refinement layer. Thus, the overall training starting from the pre-trained VGG network took 10 days on a single GPU.
 
 ## Result
 
@@ -51,7 +53,6 @@ Now in prep.
 python visualize.py -f PATH_TO_IMAGE_FILE
 ```
 
-
 # LICENSE
 
 MIT LICENSE.
@@ -59,3 +60,7 @@ MIT LICENSE.
 # Author
 
 [shiba24](https://github.com/shiba24/), August 2016.
+
+## Contributors
+
+- [bobye](https://github.com/bobye)
