@@ -43,6 +43,8 @@ Citation from the original paper:
 
 > Each minibatch consists of just one image. The learning rate and momentum are fixed to 1e 10 and 0.99, respectively. We train the   refinement layer by layer, which takes two days per refinement layer. Thus, the overall training starting from the pre-trained VGG network took 10 days on a single GPU.
 
+Current maximum batchsize is ```3``` for 12 GB memory GPU.
+
 ## Result
 
 Now in prep.
