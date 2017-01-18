@@ -24,7 +24,6 @@ merged_parts_list = {'head': 1, 'leye': 1, 'reye': 1, 'lear': 1, 'rear': 1,
                      'llleg': 9, 'luleg': 10, 'lfoot': 11,
                      'rlleg': 12, 'ruleg': 13, 'rfoot': 14}
 
-
 class MiniBatchLoader(object):
     def __init__(self, X_dir, y_dir, batchsize, insize=300, train=True):
         self.X_dir = X_dir
@@ -158,16 +157,21 @@ class MiniBatchLoader(object):
                         for j in range(objects[0, index][3].shape[1]):
                             parts_mask[:, :, 0] = np.where(parts_mask[:, :, 0] == 0, merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1]), parts_mask[:, :, 0])
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize), interpolation = cv2.INTER_NEAREST)
+        parts_mask = (parts_mask > 0).astype(np.uint8)
         return parts_mask
 
     def process_batch(self, minibatch_X, minibatch_y):
-        change_index = np.random.random((minibatch_X.shape[0], 4))
-        delta_hue = np.random.uniform(-18, 18, (minibatch_X.shape[0])).astype(np.int8)            # in opencv, hue is [0, 179]
-        processed_X = np.array([self.change_shape_3d(self.change_hue(minibatch_X[i, :, :, :], delta_hue[i]),
-                                                     change_index[i]) for i in range(len(minibatch_X))])
-        processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
-                                                     change_index[i]) for i in range(len(minibatch_y))])
-        reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w
+        if self.train:
+            change_index = np.random.random((minibatch_X.shape[0], 4))
+            delta_hue = np.random.uniform(-18, 18, (minibatch_X.shape[0])).astype(np.int8)            # in opencv, hue is [0, 179]
+            processed_X = np.array([self.change_shape_3d(self.change_hue(minibatch_X[i, :, :, :], delta_hue[i]),
+                                                         change_index[i]) for i in range(len(minibatch_X))])
+            processed_y = np.array([self.change_shape_2d(minibatch_y[i, :, :],
+                                                         change_index[i]) for i in range(len(minibatch_y))])
+        else:
+            processed_X = minibatch_X
+            processed_y = minibatch_y
+        reshaped_X = np.transpose(self.standardize(processed_X), (0, 3, 1, 2))        # n_batch, n_channel, h, w        
         # reshaped_y = np.transpose(np.array([(processed_y == i + 1).astype(np.int32) for i in range(len(parts_list) + 1)]), (1, 0, 2, 3))
         # reshaped_y = np.transpose(processed_y, (1, 0, 2, 3))
         return reshaped_X, processed_y

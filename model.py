@@ -26,7 +26,7 @@ class HumanPartsNet(chainer.Chain):
     """
     insize = 300
 
-    def __init__(self, VGGModel=None, n_class=15):
+    def __init__(self, VGGModel=None, n_class=2):
         if VGGModel is None:
             self.wb = load_VGGmodel()
         else:
@@ -48,19 +48,24 @@ class HumanPartsNet(chainer.Chain):
             conv5_2=L.Convolution2D(512, 512, 3, stride=1, pad=1, initialW=self.wb["conv5_2_W"], initial_bias=self.wb["conv5_2_b"]),
             conv5_3=L.Convolution2D(512, 512, 3, stride=1, pad=1, initialW=self.wb["conv5_3_W"], initial_bias=self.wb["conv5_3_b"]),
  
-            upsample_pool1=L.Convolution2D(64, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool2=L.Convolution2D(128, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool3=L.Convolution2D(256, self.n_class, ksize=1, stride=1, pad=0),
-            upsample_pool4=L.Convolution2D(512, self.n_class, ksize=1, stride=1, pad=0),
+            upsample_pool1=L.Convolution2D(64, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool2=L.Convolution2D(128, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool3=L.Convolution2D(256, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
+            upsample_pool4=L.Convolution2D(512, self.n_class, ksize=1, stride=1, pad=0, wscale=0.01),
 
             fc6_conv=L.Convolution2D(512, 4096, 7, stride=1, pad=0, initialW=self.wb["fc6_W"], initial_bias=self.wb["fc6_b"]),
             fc7_conv=L.Convolution2D(4096, 4096, 1, stride=1, pad=0, initialW=self.wb["fc7_W"], initial_bias=self.wb["fc7_b"]),
 
-            upconv1=L.Deconvolution2D(4096, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv2=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv3=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv4=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),
-            upconv5=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0),            
+            upconv1=L.Deconvolution2D(4096, self.n_class, ksize= 4, stride=2, pad=0, nobias=True, 
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, 4096])),
+            upconv2=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv3=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv4=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),
+            upconv5=L.Deconvolution2D(self.n_class, self.n_class, ksize= 4, stride=2, pad=0, nobias=True,
+                                      initialW=self.get_deconv_filter([4, 4, self.n_class, self.n_class])),            
         )
         self.train = True
         del self.wb
@@ -80,11 +85,29 @@ class HumanPartsNet(chainer.Chain):
     def calc_offset(in_shape, out_shape):
         return [(i - j) / 2 for i, j in zip(in_shape, out_shape) if i != j]
 
+    @staticmethod
+    def get_deconv_filter(f_shape):
+        from math import ceil
+        width = f_shape[0]
+        heigh = f_shape[1]
+        f = ceil(width/2.0)
+        c = (2 * f - 1 - f % 2) / (2.0 * f)
+        bilinear = np.zeros([f_shape[0], f_shape[1]])
+        for x in range(width):
+            for y in range(heigh):
+                value = (1 - abs(x / f - c)) * (1 - abs(y / f - c))
+                bilinear[x, y] = value
+        weights = np.zeros(f_shape, dtype=np.float32)
+        for i in range(f_shape[2]):
+            weights[:, :, i, i] = bilinear
+        return weights.transpose([3, 2, 0, 1])
+
     def __call__(self, x, t):
         h = self.predict_proba(x)
         self.loss = F.softmax_cross_entropy(h, t)
         #self.accuracy = self.calculate_accuracy(h, t)
         self.accuracy = F.accuracy(h, t, ignore_label=-1)
+        self.IoU = self.calculate_intersection_of_union(h, t)
         return self.loss
 
     def predict(self, x):
@@ -170,6 +193,17 @@ class HumanPartsNet(chainer.Chain):
         masked_truths = truths[mask] 
         s = (masked_reduced_preditions == masked_truths).mean()
         return s
+        
+    def calculate_intersection_of_union(self, predictions, truths):
+        """ IoU metrics for human silhouette """
+        predictions = predictions.data
+        truths = truths.data
+        xp = cuda.get_array_module(predictions)        
+        mask1 = truths.reshape((truths.shape[0], truths.shape[1]*truths.shape[2])) > 0
+        mask0 = predictions.argmax(axis=1).reshape(mask1.shape) > 0
+        intersection = xp.logical_and(mask0, mask1).sum(axis=1) + 1
+        union = xp.logical_or(mask0, mask1).sum(axis=1) + 1
+        return (intersection.astype(predictions.dtype)  / union.astype(predictions.dtype)).mean()
 
 
 def load_VGGmodel():
