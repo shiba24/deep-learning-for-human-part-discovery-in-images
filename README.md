@@ -15,7 +15,9 @@ NOTE: This is not official implementation. Original paper is [Deep Learning for 
   - cv2 (opencv)
 
 
-# Data preparation
+# Preparation
+
+## Data
 
 ```
 bash prepare.sh
@@ -23,11 +25,16 @@ bash prepare.sh
 
 This script downloads VOC 2010 dataset (<http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar>) and the authors' original dataset (<http://www2.informatik.uni-freiburg.de/~oliveira/datasets/Sitting.tar.gz>).
 
+## Model
+
+You can download pre-trained FCN model from [here](https://drive.google.com/open?id=0BxSyYt1jT6LhUlhITjdicDFyNHM).
+
+We will use weights of this model and train new model on VOC dataset.
 
 # Start training
 
 ```
-python train.py -g 0 -b 5 -e 3000 -l on -s on
+python train.py -g 0 -b 3 -e 3000 -l on -s on
 ```
 
 ## Possible options
@@ -36,7 +43,6 @@ python train.py -g 0 -b 5 -e 3000 -l on -s on
 python train.py --help
 ```
 
-
 ## GPU memory requirement
 
 Citation from the original paper:
@@ -44,6 +50,8 @@ Citation from the original paper:
 > Each minibatch consists of just one image. The learning rate and momentum are fixed to 1e 10 and 0.99, respectively. We train the   refinement layer by layer, which takes two days per refinement layer. Thus, the overall training starting from the pre-trained VGG network took 10 days on a single GPU.
 
 Current maximum batchsize is ```3``` for 12 GB memory GPU.
+
+Also it was confirmed that MBP (Late 2016, memory 16 GiB) can run with batchsize ```1```.
 
 ## Result
 

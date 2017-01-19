@@ -122,10 +122,9 @@ class MiniBatchLoader(object):
 
     def scan_for_human(self):
         print 'scanning all images for human part labels ... '
-        for i, path_y in tqdm(enumerate(self.train_y_file_list + self.test_y_file_list)):
-            y = self.load_y([path_y])
-            if (y > 0).any():
-                self.human_y_list.append(path_y)
+        all_y_list = self.train_y_file_list + self.test_y_file_list
+        all_y_array = np.array([self.make_mask(f) for f in tqdm(all_y_list)])
+        self.human_y_list = [all_y_list[i] for i, mat in enumerate(all_y_array) if np.any(mat > 0)]
         self.train_X_file_list, self.train_y_file_list, self.test_X_file_list, self.test_y_file_list = self.split_train_test(self.X_dir, self.y_dir, 0.9, self.human_y_list)
         print 'found %d images' % len(self.human_y_list)
         return len(self.human_y_list)
