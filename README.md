@@ -2,6 +2,8 @@
 
 NOTE: This is not official implementation. Original paper is [Deep Learning for Human Part Discovery in Images](http://lmb.informatik.uni-freiburg.de/Publications/2016/OB16a/oliveira16icra.pdf).
 
+We are now reproducing the experiments in the original paper. Any contribution will be welcomed!
+
 # Requirements
 
 - Python 2.7.11+
