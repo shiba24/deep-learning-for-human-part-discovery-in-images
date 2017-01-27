@@ -28,11 +28,10 @@ class FeatureMapDropout(function.Function):
                 flag = (xp.random.rand(*x[0].shape[:2], dtype=numpy.float32) >=
                         self.dropout_ratio)
             self.mask = scale * flag
-        #TODO: check, if broadcast works as intended
-        return x[0] * self.mask,
+        return x[0] * self.mask.reshape(self.mask.shape + (1,) * (x[0].ndim - self.mask.ndim)),
 
     def backward(self, x, gy):
-        return gy[0] * self.mask,
+        return gy[0] * self.mask.reshape(self.mask.shape + (1,) * (gy[0].ndim - self.mask.ndim)),
 
 def feature_map_dropout(x, ratio=.5, train=True):
     """Drops feature maps of input variable randomly.
