@@ -156,7 +156,7 @@ class MiniBatchLoader(object):
                         for j in range(objects[0, index][3].shape[1]):
                             parts_mask[:, :, 0] = np.where(parts_mask[:, :, 0] == 0, merged_parts_list[objects[0, index][3][0, j][0][0]] * np.array(objects[0, index][3][0, j][1]), parts_mask[:, :, 0])
         parts_mask = cv2.resize(parts_mask.astype(np.uint8), (self.insize, self.insize), interpolation = cv2.INTER_NEAREST)
-        parts_mask = (parts_mask > 0).astype(np.uint8)
+        # parts_mask = (parts_mask > 0).astype(np.uint8)
         return parts_mask
 
     def process_batch(self, minibatch_X, minibatch_y):
@@ -179,7 +179,9 @@ class MiniBatchLoader(object):
         if not os.path.exists(mean_image):
             self.calc_mean()
         # mean = cv2.imread(mean_image)
-        subtracted_img = images - 126
+        # image type is np.uint8!!!
+        # images in range [-1, 1]
+        subtracted_img = 2. * images.astype(np.float32) - 255.
         return subtracted_img / 255.
 
     def calc_mean(self):

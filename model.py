@@ -8,6 +8,8 @@ import numpy as np
 import os
 import six
 
+from feature_map_dropout import feature_map_dropout
+
 
 url = 'https://googledrive.com/host/0BxSyYt1jT6LhUlhITjdicDFyNHM'
 modelname = 'fcn-8s-pascalcontext_W_and_b.pkl'
@@ -26,7 +28,7 @@ class HumanPartsNet(chainer.Chain):
     """
     insize = 300
 
-    def __init__(self, VGGModel=None, n_class=2):
+    def __init__(self, VGGModel=None, n_class=15):
         if VGGModel is None:
             self.wb = load_VGGmodel()
         else:
@@ -135,17 +137,17 @@ class HumanPartsNet(chainer.Chain):
         h = F.relu(self.conv5_2(h))
         h = F.relu(self.conv5_3(h))
         h = F.max_pooling_2d(h, 2, stride=2)
-        h = F.dropout(F.relu(self.fc6_conv(h)), train=self.train, ratio=0.5)
-        h = F.dropout(F.relu(self.fc7_conv(h)), train=self.train, ratio=0.5)
+        h = feature_map_dropout(F.relu(self.fc6_conv(h)), train=self.train, ratio=0.5)
+        h = feature_map_dropout(F.relu(self.fc7_conv(h)), train=self.train, ratio=0.5)
 
         h = F.relu(self.upconv1(h))
         p4 = self.upsample_pool4(p4)
-        g = F.dropout(self.crop(p4, h.data.shape, self.calc_offset(p4.data.shape, h.data.shape)),
+        g = feature_map_dropout(self.crop(p4, h.data.shape, self.calc_offset(p4.data.shape, h.data.shape)),
                       train=self.train, ratio=0.5)
         del p4
         h = F.relu(self.upconv2(h + g))
         p3 = self.upsample_pool3(p3)
-        g = F.dropout(self.crop(p3, h.data.shape, self.calc_offset(p3.data.shape, h.data.shape)),
+        g = feature_map_dropout(self.crop(p3, h.data.shape, self.calc_offset(p3.data.shape, h.data.shape)),
                       train=self.train, ratio=0.5)
         del p3
         j = F.relu(self.upconv3(h + g))
@@ -157,7 +159,7 @@ class HumanPartsNet(chainer.Chain):
         h = F.relu(self.conv2_2(h))
         p2 = F.max_pooling_2d(h, 2, stride=2)
         p2 = self.upsample_pool2(p2)
-        g = F.dropout(self.crop(p2, j.data.shape, self.calc_offset(p2.data.shape, j.data.shape)),
+        g = feature_map_dropout(self.crop(p2, j.data.shape, self.calc_offset(p2.data.shape, j.data.shape)),
                       train=self.train, ratio=0.5)
         del p2
         j = F.relu(self.upconv4(j + g)) 
@@ -166,7 +168,7 @@ class HumanPartsNet(chainer.Chain):
         h = F.relu(self.conv1_2(h))
         p1 = F.max_pooling_2d(h, 2, stride=2)
         p1 = self.upsample_pool1(p1)
-        g = F.dropout(self.crop(p1, j.data.shape, self.calc_offset(p1.data.shape, j.data.shape)),
+        g = feature_map_dropout(self.crop(p1, j.data.shape, self.calc_offset(p1.data.shape, j.data.shape)),
                       train=self.train, ratio=0.5)
         del p1
         h = F.relu(self.upconv5(j + g))

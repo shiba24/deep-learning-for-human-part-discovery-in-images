@@ -18,7 +18,7 @@ X_dir = "./data/img/"
 y_dir = "./data/mask/"
 
 def standardize(image):
-    subtracted_img = image - 126
+    subtracted_img = 2. * image.astype(np.float32) - 255.
     return subtracted_img / 255.
 
 parser = argparse.ArgumentParser(description='Human parts network')
@@ -33,7 +33,7 @@ parser.add_argument('--extension', '-e', type=str,
 args = parser.parse_args()
 
 # model setteing
-model = HumanPartsNet(n_class=2)
+model = HumanPartsNet(n_class=15)
 if args.pretrainedmodel is not None:
     from chainer import serializers
     serializers.load_hdf5(args.pretrainedmodel, model)
